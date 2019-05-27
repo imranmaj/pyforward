@@ -19,28 +19,40 @@ Install requirements with `pip install -r requirements.txt`
 #### `PyForward.enable(external_port=None, internal_port=None, internal_ip=None, protocol="TCP", description="PyForward", duration=0)`
 
 Maps an external port to an internal port
+
 Returns tuple of external ip, external port, internal ip, internal port on success, error message on error
 
+
 `external_port` - router port to forward from (default is random open port)
+
 `internal_port` - port to forward to from router port 
     (default is a random open port if ip is unspecified, otherwise random)
 `internal_ip` - ip address to forward to (default is local ip address)
+
 `protocol` - protocol to allow over port ("TCP" or "UDP") (default is "TCP")
+
 `description` - description of port forward (default is "pfwd")
+
 `duration` - lease duration of port mapping in seconds (default is 604800 seconds (7 days))
 
 #### `PyForward.disable(external_port=None, protocol=None)`
 
 Disables port mapping on a port and protocol
+
 Returns True on success, error message on error
 
+
 `external_port` - router port to disable forwarding from (default is port that forwarding was enabled on, if enable was called earlier)
+
 `protocol` - protocol allowed over port to disable ("TCP" or "UDP") (default is protocol that forwarding was enabled on, if enable was called earlier)
 
 #### `PyForward.refresh(external_port=None, internal_port=None, internal_ip=None, protocol="TCP", description="PyForward", duration=0)`
 
 Refreshes an existing port mapping
+
 Returns tuple received from enable on success, error message on fail
+
+
 
 `args` - same as args for enable, but default is values used in previous enable call
 
@@ -49,6 +61,7 @@ Returns tuple received from enable on success, error message on fail
 Get a single mapping given the index in the IGD's table of mappings
 
 Returns dict of mapping on success, error message on fail
+
 
 dict form:
 ```
