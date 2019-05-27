@@ -2,13 +2,13 @@
 
 Python port forwarding, for humans
 
-# Overview
+## Overview
 
 Easy to use port forwarding using UPnP's IGD-PCP (see [https://tools.ietf.org/html/rfc6970](https://tools.ietf.org/html/rfc6970) for more information).
 
 Install requirements with `pip install -r requirements.txt`
 
-# Documentation
+## Documentation
 
 ### `class PyForward`
 
@@ -25,13 +25,13 @@ Returns tuple of external ip, external port, internal ip, internal port on succe
 
 `external_port` - router port to forward from (default is random open port)
 
-`internal_port` - port to forward to from router port 
-    (default is a random open port if ip is unspecified, otherwise random)
+`internal_port` - port to forward to from router port (default is a random open port if ip is unspecified, otherwise random)
+
 `internal_ip` - ip address to forward to (default is local ip address)
 
 `protocol` - protocol to allow over port ("TCP" or "UDP") (default is "TCP")
 
-`description` - description of port forward (default is "pfwd")
+`description` - description of port forward (default is "PyForward")
 
 `duration` - lease duration of port mapping in seconds (default is 604800 seconds (7 days))
 
@@ -51,7 +51,6 @@ Returns True on success, error message on error
 Refreshes an existing port mapping
 
 Returns tuple received from enable on success, error message on fail
-
 
 
 `args` - same as args for enable, but default is values used in previous enable call
@@ -99,7 +98,7 @@ Returns available port on IGD
 
 Returns a random port number
 
-# Examples
+## Examples
 
 ### Create and then disable a mapping for an unspecified port
 

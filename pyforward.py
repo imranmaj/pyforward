@@ -1,5 +1,6 @@
 """
-Copyright (c) 2019 Imran Majeed. All rights reserved.
+Copyright (c) 2019 Imran Majeed
+See LICENSE.md for the full license under which this software is provided.
 
 PyForward: Python port forwarding, for humans
 Implements UPnP's IGD-PCP for NAT traversal
@@ -118,7 +119,7 @@ class PyForward:
             (default is a random open port if ip is unspecified, otherwise random)
         internal_ip - ip address to forward to (default is local ip address)
         protocol - protocol to allow over port ("TCP" or "UDP") (default is "TCP")
-        description - description of port forward (default is "pfwd")
+        description - description of port forward (default is "PyForward")
         duration - lease duration of port mapping in seconds (default is 604800 seconds (7 days))
 
         Maps an external port to an internal port
