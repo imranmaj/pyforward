@@ -133,3 +133,7 @@ pf.enable(duration=5)
 time.sleep(10) # mapping will expire
 pf.refresh()
 ```
+
+## License
+
+See LICENSE.md for the full license under which this software is provided.
