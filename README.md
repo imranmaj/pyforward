@@ -4,7 +4,9 @@ Python port forwarding, for humans
 
 ## Overview
 
-Easy to use port forwarding using UPnP's IGD-PCP (see [https://tools.ietf.org/html/rfc6970](https://tools.ietf.org/html/rfc6970) for more information).
+Easy to use port forwarding using UPnP's IGD-PCP (see [https://tools.ietf.org/html/rfc6970](https://tools.ietf.org/html/rfc6970) for more information). Great for peer-to-peer networking, etc.
+
+Note that the default arguments for methods are set up for convenience. Calling `enable()` without any arguments will automatically forward an open port on the IGD to an open port on the host machine. Additionally, calling `disable()` or `refresh()` without any arguments will disable or refresh the mapping created with the last `enable` call.
 
 Install requirements with:
 
