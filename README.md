@@ -6,7 +6,13 @@ Python port forwarding, for humans
 
 Easy to use port forwarding using UPnP's IGD-PCP (see [https://tools.ietf.org/html/rfc6970](https://tools.ietf.org/html/rfc6970) for more information).
 
-Install requirements with `pip install -r requirements.txt`
+Install requirements with:
+
+`pip install -r requirements.txt`
+
+On linux, you must install some packages first before running the pip command: 
+
+`sudo apt-get install libxml2-dev libxslt-dev python-dev python3-lxml`
 
 ## Documentation
 
