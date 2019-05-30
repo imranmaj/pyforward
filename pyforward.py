@@ -8,6 +8,7 @@ See https://tools.ietf.org/html/rfc6970
 """
 
 import socket
+from socket import timeout as TimeoutError
 import re
 import requests
 import random
@@ -17,19 +18,25 @@ from bs4 import BeautifulSoup
 from yarl import URL
 
 class PyForward:
-    def __init__(self, debug=False):
+    def __init__(self, wait_time=3, debug=False):
         """
+        wait_time - how long to wait for IGD response (default is 3 seconds)
         debug - whether to display debug information (will be written to log file regardless)
 
-        Find the IGD's control URL in order to make requests to it
+        Sets up PyForward service by attempting to connect to IGD
+        If UPnP is not supported, throws RuntimeError
         """
-
+        
+        # whether to print debug info
         self.debug = debug
+
+        # scheme constant
+        self.SCHEME = "urn:schemas-upnp-org:service:WANIPConnection:1"
 
         self.log("Starting PyForward service")
 
         # ssdp request to find igd location
-        REQUEST = (
+        SSDP_REQUEST = (
             b"M-SEARCH * HTTP/1.1\r\n"
             b"Host:239.255.255.250:1900\r\n"
             b"ST:urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\n"
@@ -38,9 +45,21 @@ class PyForward:
         )
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # ask network for info about the igd device
-        sock.sendto(REQUEST, ("239.255.255.250", 1900))
-        # receive information about igd device, ip address of igd
-        response, address = sock.recvfrom(4096)
+        self.log("Looking for IGD")
+        sock.sendto(SSDP_REQUEST, ("239.255.255.250", 1900))
+
+        # wait before timing out
+        sock.settimeout(wait_time)
+        try:
+            # receive information about igd device, ip address of igd
+            response, address = sock.recvfrom(4096)
+        except TimeoutError:
+            # request for igd timed out, none available
+            self.log("No IGD available")
+            raise RuntimeError("Could not find a UPnP enabled IGD")
+        else:
+            self.log("IGD detected")
+
         # ip address of gateway device
         self.igd_ip = address[0]
         self.log("IGD ip is", self.igd_ip)
@@ -51,7 +70,7 @@ class PyForward:
         # get location of igd profile from info about igd device
         profile_location = response["LOCATION"]
 
-        # look for connection type and url
+        # look for control url (api to set port forwarding)
         profile = requests.get(profile_location).content
         parser = BeautifulSoup(profile, "lxml-xml")
         # look for types of services
@@ -60,17 +79,14 @@ class PyForward:
         for service in services:
             schema = service.string.split(":")[-2]
             if schema in ("WANIPConnection", "WANPPPConnection"):
-                # find the path to control url (api to set port forwarding)
+                # find the path to control url
                 control_path = service.parent.find("controlURL").string
                 break
-        assert control_path is not None
-        # get full url to control api (port forwarding api)
-        # using the domain of the profile location and the control path
+        # get full url
         self.control_url = URL(profile_location).with_path(control_path)
         self.log("Control url is", self.control_url)
 
-        # scheme constant
-        self.SCHEME = "urn:schemas-upnp-org:service:WANIPConnection:1"
+        self.log("Successfully finished PyForward service setup")
 
     def body(self, content):
         """
@@ -127,9 +143,10 @@ class PyForward:
             error message on error
         """
 
-        ACTION = "AddPortMapping"
+        if not protocol.upper() in ("TCP", "UDP"):
+            raise ValueError("Protocol must be TCP or UDP")
 
-        assert protocol.upper() in ("TCP", "UDP"), "Protocol must be TCP or UDP"
+        ACTION = "AddPortMapping"
         
         # set external port if not chosen by user
         if not external_port:
@@ -215,6 +232,9 @@ class PyForward:
         Returns True on success, error message on error
         """
 
+        if not protocol.upper() in ("TCP", "UDP"):
+            raise ValueError("Protocol must be TCP or UDP")
+
         ACTION = "DeletePortMapping"
 
         assert external_port is not None or self.external_port is not None, "External port must be specified for disable"
@@ -283,6 +303,9 @@ class PyForward:
         Returns tuple received from enable on success,
             error message on fail
         """
+
+        if not protocol.upper() in ("TCP", "UDP"):
+            raise ValueError("Protocol must be TCP or UDP")
 
         # set values to values specified by previous enable call
         if external_port is None:
@@ -401,6 +424,7 @@ class PyForward:
             all_responses.append(response)
 
             index += 1
+        self.log("No more mappings")
 
         # delete the last response (it's the error message)
         del all_responses[-1]
@@ -543,18 +567,17 @@ class PyForward:
             prints debug information to console and writes to file
         """
 
-        # assemble full log message
-        full_message = " ".join([str(arg) for arg in args])
-        # add current time
-        full_message = "[%s] %s" % (str(datetime.datetime.now()), full_message)
-
-        if not os.path.isfile("log.txt"):
-            open("log.txt", "w").close()
-
-        # write to file
-        with open("log.txt", "a") as f:
-            f.write(full_message)
-        # print to console
-        # only if debug enabled
         if self.debug:
+            # assemble full log message
+            full_message = " ".join([str(arg) for arg in args])
+            # add current time
+            full_message = "[%s] %s" % (str(datetime.datetime.now()), full_message)
+
+            if not os.path.isfile("log.txt"):
+                open("log.txt", "w").close()
+
+            # write to file
+            with open("log.txt", "a") as f:
+                f.write(full_message + "\n")
+            # print to console
             print(full_message)

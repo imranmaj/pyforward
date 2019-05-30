@@ -20,7 +20,13 @@ On linux, you must install some packages first before running the pip command:
 
 ### `class PyForward`
 
-#### `PyForward.__init__(debug=False)`
+#### `PyForward.__init__(wait_time=3, debug=False)`
+
+Sets up PyForward service by attempting to connect to IGD
+
+If there is no IGD available, throws `RuntimeError`
+
+`wait_time` - how long to wait for IGD response (default is 3 seconds)
 
 `debug` - whether to display debug information (will be written to log file regardless)
 
