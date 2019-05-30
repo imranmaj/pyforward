@@ -26,6 +26,7 @@ Sets up PyForward service by attempting to connect to IGD
 
 If there is no IGD available, throws `RuntimeError`
 
+
 `wait_time` - how long to wait for IGD response (default is 3 seconds)
 
 `debug` - whether to display debug information (will be written to log file regardless)
@@ -121,7 +122,7 @@ Returns a random port number
 
 ## Examples
 
-### Create and then disable a mapping for an unspecified port
+### Create and then disable a mapping
 
 ```
 from pyforward import PyForward
@@ -131,16 +132,22 @@ external_ip, external_port, internal_ip, internal_port = pf.enable()
 pf.disable()
 ```
 
-That's it!
-
-### Delete all existing mappings
+### Get all mappings to host machine
 
 ```
 from pyforward import PyForward
 
 pf = PyForward()
-for mapping in pf.get_all_mappings():
-    pf.disable(external_port=mapping["external_port"], protocol=mapping["protocol"])
+print([mapping for mapping in pf.get_all_mappings() if mapping["internal_ip"] == pf.get_local_ip()])
+```
+
+### Delete all mappings to host machine
+
+```
+from pyforward import PyForward
+
+pf = PyForward()
+pf.disable_all(internal_ip=pf.get_local_ip())
 ```
 
 ### Refresh a mapping
@@ -150,8 +157,8 @@ from pyforward import PyForward
 import time
 
 pf = PyForward()
-pf.enable(duration=5)
-time.sleep(10) # mapping will expire
+pf.enable(duration=5) # mapping expires after 5 seconds
+time.sleep(10) # for demonstration, to show that the mapping will expire
 pf.refresh()
 ```
 
