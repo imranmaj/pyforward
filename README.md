@@ -60,7 +60,7 @@ Returns True on success, error message on error
 
 `protocol` - protocol allowed over port to disable ("TCP" or "UDP") (default is protocol that forwarding was enabled on, if enable was called earlier)
 
-#### `PyForward.disable_all(external_port=None, internal_port=None, internal_ip=None, protocol=None, description=None, duration=0)`
+#### `PyForward.disable_all(external_port=None, internal_port=None, internal_ip=None, protocol=None, description=None, duration=None)`
 
 Disables all mappings matching given rules
 
