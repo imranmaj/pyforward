@@ -24,7 +24,7 @@ class PyForward:
         debug - whether to display debug information (will be written to log file regardless)
 
         Sets up PyForward service by attempting to connect to IGD
-        If UPnP is not supported, throws RuntimeError
+        If there is no IGD available, throws RuntimeError
         """
         
         # whether to print debug info
@@ -143,9 +143,6 @@ class PyForward:
             error message on error
         """
 
-        if not protocol.upper() in ("TCP", "UDP"):
-            raise ValueError("Protocol must be TCP or UDP")
-
         ACTION = "AddPortMapping"
         
         # set external port if not chosen by user
@@ -204,7 +201,7 @@ class PyForward:
             "Attempted to enable mapping: \nexternal port:", external_port, 
             "\nprotocol:", protocol,
             "\ninternal port:", internal_port,
-            "\ninternal ip", internal_ip,
+            "\ninternal ip:", internal_ip,
             "\ndescription:", description,
             "\nduration:", duration
         )
@@ -214,7 +211,6 @@ class PyForward:
         if parser.find("errorDescription") is not None:
             error = parser.find("errorDescription").contents[0]
             self.log("Error:", error)
-
             return error
 
         # success
@@ -232,13 +228,7 @@ class PyForward:
         Returns True on success, error message on error
         """
 
-        if not protocol.upper() in ("TCP", "UDP"):
-            raise ValueError("Protocol must be TCP or UDP")
-
         ACTION = "DeletePortMapping"
-
-        assert external_port is not None or self.external_port is not None, "External port must be specified for disable"
-        assert protocol is not None or self.protocol is not None, "Protocol must be specified for disable"
 
         # set external port if not chosen by user
         if not external_port:
@@ -279,12 +269,67 @@ class PyForward:
         if parser.find("errorDescription") is not None:
             error = parser.find("errorDescription").contents[0]
             self.log("Error:", error)
-
             return error
 
         # success
         self.log("Disable successful")
         return True
+
+    def disable_all(
+            self,
+            external_port=None,
+            internal_port=None,
+            internal_ip=None,
+            protocol=None,
+            description=None,
+            duration=None
+        ):
+        """
+        args - same as args for enable
+
+        Disables all mappings matching given rules
+        """
+
+        self.log(
+            "Attempted to disable mappings matching rules: \nexternal port:", external_port, 
+            "\nprotocol:", protocol,
+            "\ninternal port:", internal_port,
+            "\ninternal ip:", internal_ip,
+            "\ndescription:", description,
+            "\nduration:", duration
+        )
+
+        all_mappings = self.get_all_mappings()
+
+        # delete all mappings matching rules
+        i = 0
+        while i < len(all_mappings):
+            mapping = all_mappings[i]
+
+            if external_port and mapping["external_port"] != external_port:
+                del all_mappings[i]
+                i -= 1
+            if internal_port and mapping["internal_port"] != internal_port:
+                del all_mappings[i]
+                i -= 1
+            if internal_ip and mapping["internal_ip"] != internal_ip:
+                del all_mappings[i]
+                i -= 1
+            if protocol and mapping["protocol"] != protocol:
+                del all_mappings[i]
+                i -= 1
+            if description and mapping["description"] != description:
+                del all_mappings[i]
+                i -= 1
+            if duration and mapping["duration"] != duration:
+                del all_mappings[i]
+                i -= 1
+            
+            i += 1
+
+        # disable all the ones that are left 
+        for mapping in all_mappings:
+            self.disable(external_port=mapping["external_port"], protocol=mapping["protocol"])
 
     def refresh(
             self,
@@ -303,9 +348,6 @@ class PyForward:
         Returns tuple received from enable on success,
             error message on fail
         """
-
-        if not protocol.upper() in ("TCP", "UDP"):
-            raise ValueError("Protocol must be TCP or UDP")
 
         # set values to values specified by previous enable call
         if external_port is None:
@@ -326,8 +368,16 @@ class PyForward:
         if response is str:
             # got an error message
             self.log("Could not refresh due to error")
-
             return response
+
+        self.log(
+            "Attempted to refresh the following mapping: \nexternal port:", external_port, 
+            "\nprotocol:", protocol,
+            "\ninternal port:", internal_port,
+            "\ninternal ip:", internal_ip,
+            "\ndescription:", description,
+            "\nduration:", duration
+        )
         
         # enable new mapping with same args
         response = self.enable(
@@ -341,7 +391,6 @@ class PyForward:
         if response is str:
             # got an error message
             self.log("Could not refresh due to error")
-
             return response
 
         # success
@@ -394,7 +443,6 @@ class PyForward:
         if parser.find("errorDescription") is not None:
             error = parser.find("errorDescription").contents[0]
             self.log("Error:", error)
-
             return error
 
         # success
@@ -474,7 +522,6 @@ class PyForward:
         if parser.find("errorDescription") is not None:
             error = parser.find("errorDescription").contents[0]
             self.log("Error:", error)
-
             return error
 
         # success
@@ -540,7 +587,6 @@ class PyForward:
         if parser.find("errorDescription") is not None:
             error = parser.find("errorDescription").contents[0]
             self.log("Error:", error)
-
             return error
 
         # success
