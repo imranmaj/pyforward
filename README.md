@@ -1,165 +1,158 @@
 # PyForward
 
-Python port forwarding, for humans
+Pythonic port forwarding over UPnP's IGD-PCP
 
 ## Overview
 
-Easy to use port forwarding using UPnP's IGD-PCP (see [https://tools.ietf.org/html/rfc6970](https://tools.ietf.org/html/rfc6970) for more information). Great for peer-to-peer networking, etc.
-
-Note that the default arguments for methods are set up for convenience. Calling `enable()` without any arguments will automatically forward an open port on the IGD to an open port on the host machine. Additionally, calling `disable()` or `refresh()` without any arguments will disable or refresh the mapping created with the last `enable` call.
+Easy to use port forwarding using Universal Plug 'n Play's Internet Gateway Device Port Control Protocol (see [https://tools.ietf.org/html/rfc6970](https://tools.ietf.org/html/rfc6970) for more information).
 
 Install requirements with:
 
 `pip install -r requirements.txt`
 
-On linux, you must install some packages first before running the pip command: 
+On Linux, you must install some packages first before running the pip command: 
 
 `sudo apt-get install libxml2-dev libxslt-dev python-dev python3-lxml`
 
 ## Documentation
 
-### `class PyForward`
+### `class Mapping`
 
-#### `PyForward.__init__(wait_time=3, debug=False)`
+Port forwards are defined with mappings. A Mapping represents the mapping of a port on the internet gateway device (external port and IP) to an internal device (internal port and IP).
 
-Sets up PyForward service by attempting to connect to IGD
-
-If there is no IGD available, throws `RuntimeError`
+#### `Mapping.__init__(external_port: int, internal_port: int, internal_ip: str, protocol: Union[Literal["TCP"], Literal["UDP"]], description: str, duration: datetime.timedelta)`
 
 
-`wait_time` - how long to wait for IGD response (default is 3 seconds)
+* `external_port` - external port on IGD to map
 
-`debug` - whether to display debug information (will be written to log file regardless)
+* `internal_ip` - internal ip on local device to map
 
-#### `PyForward.enable(external_port=None, internal_port=None, internal_ip=None, protocol="TCP", description="PyForward", duration=0)`
+* `internal_port` - internal port on local device to map
 
-Maps an external port to an internal port
+* `protocol` - protocol to allow over port ("TCP" or "UDP")
 
-Returns tuple of external ip, external port, internal ip, internal port on success, error message on error
+* `description` - description of port forward
 
+* `duration` - lease duration of port mapping. This is a `timedelta` object from the built-in `datetime` module
 
-`external_port` - router port to forward from (default is random open port)
+#### `Mapping.enable() -> Response`
 
-`internal_port` - port to forward to from router port (default is a random open port if ip is unspecified, otherwise random)
+Enables this mapping. Returns a Response object.
 
-`internal_ip` - ip address to forward to (default is local ip address)
+If attributes are not assigned values when this object is initalized, they are defaulted to certain values for the purposes of this method.
 
-`protocol` - protocol to allow over port ("TCP" or "UDP") (default is "TCP")
+* Defaults `external_port` to random open port
 
-`description` - description of port forward (default is "PyForward")
+* Defaults `internal_ip` to local IP
 
-`duration` - lease duration of port mapping in seconds (default is 604800 seconds (7 days))
+* Defaults `internal_port` to random open port if IP is local IP, otherwise random
 
-#### `PyForward.disable(external_port=None, protocol=None)`
+* Defaults `protocol` to TCP
 
-Disables port mapping on a port and protocol
+* Defaults `description` to empty string
 
-Returns True on success, error message on error
+* Defaults `duration` to `timedelta(seconds=604800)` (7 days)
 
+Because of these defaults, calling `enable()` without any arguments will automatically forward an open port on the IGD to an open port on the host machine.
 
-`external_port` - router port to disable forwarding from (default is port that forwarding was enabled on, if enable was called earlier)
+#### `Mapping.disable()`
 
-`protocol` - protocol allowed over port to disable ("TCP" or "UDP") (default is protocol that forwarding was enabled on, if enable was called earlier)
+Disables this mapping. The Mapping to disable is only determined based on `external_port` and `protocol`.
 
-#### `PyForward.disable_all(external_port=None, internal_port=None, internal_ip=None, protocol=None, description=None, duration=None)`
+#### `Mapping.disable_all()` (`@classmethod`)
 
-Disables all mappings matching given rules
+Disables all mappings.
 
+#### `Mapping.disabled_matching()`
 
-`args` - same as args for enable
+Disables all mappings that match at least one of the attributes that this Mapping was initialized with.
 
-#### `PyForward.refresh(external_port=None, internal_port=None, internal_ip=None, protocol="TCP", description="PyForward", duration=0)`
+#### `Mapping.refresh() -> Response`
 
-Refreshes an existing port mapping
+Refreshes this mapping. Returns a Response object.
 
-Returns tuple received from enable on success, error message on fail
+#### `Mapping.get_mapping(index) -> Mapping` (`@classmethod`)
 
+Get a single mapping given the index in the IGD's table of mappings. Returns a Mapping object.
 
-`args` - same as args for enable, but default is values used in previous enable call
+#### `Mapping.get_all_mappings() -> List[Mapping]` (`@classmethod`)
 
-#### `PyForward.get_mapping(index)`
+Returns list of all Mappings.
 
-Get a single mapping given the index in the IGD's table of mappings
+#### `Mapping.get_local_ip() -> str` (`@classmethod`)
 
-Returns dict of mapping on success, error message on fail
+Returns local IP address.
 
+#### `Mapping.get_external_ip() -> str` (`@classmethod`)
 
-dict form:
-```
-{
-    "external_port": <external port>,
-    "internal_port": <internal port>,
-    "internal_ip": <internal ip>,
-    "protocol": <protocol>,
-    "description": <description>,
-    "duration": <remaining mapping lease duration>
-}
-```
+Returns the external IP address.
 
-#### `PyForward.get_all_mappings()`
+#### `Mapping.get_open_local_port() -> int` (`@staticmethod`)
 
-Returns list of all port mappings (each mapping is dict with form described in get_mapping)
+Returns an available port on local machine.
 
-#### `PyForward.get_local_ip()`
+#### `Mapping.get_open_external_port() -> int` (`@classmethod`)
 
-Returns local ip address
+Returns available port on IGD.
 
-#### `PyForward.get_external_ip()`
+### `class Response`
 
-Returns the external ip address
+Returned when a Mapping is enabled or refreshed in order to provide full information on the mapping.
 
-#### `PyForward.get_open_local_port()`
+`Response.external_ip` - external IP on IGD which was mapped
 
-Returns an available port on local machine
+`Response.external_port` - external port on IGD which was mapped
 
-#### `PyForward.get_open_external_port()`
+`Response.internal_ip` - internal IP on local device which was mapped
 
-Returns available port on IGD
+`Response.internal_port` - internal port which was mapped
 
-#### `PyForward.get_random_port()`
+`Response.protocol` - protocol to allow over port ("TCP" or "UDP")
 
-Returns a random port number
+`Response.description` - description of port forward
+
+`Response.duration` - lease duration of port mapping as a timedelta
 
 ## Examples
 
-### Create and then disable a mapping
+### Create and then disable a mapping to the local machine
 
 ```
-from pyforward import PyForward
+from pyforward import Mapping
 
-pf = PyForward()
-external_ip, external_port, internal_ip, internal_port = pf.enable()
-pf.disable()
+m = Mapping()
+m.enable()
+m.disable()
 ```
 
 ### Get all mappings to host machine
 
 ```
-from pyforward import PyForward
+from pyforward import Mapping
 
-pf = PyForward()
-print([mapping for mapping in pf.get_all_mappings() if mapping["internal_ip"] == pf.get_local_ip()])
+print([mapping for mapping in Mapping.get_all_mappings() if mapping.internal_ip == Mapping.get_local_ip()])
 ```
 
 ### Delete all mappings to host machine
 
 ```
-from pyforward import PyForward
+from pyforward import Mapping
 
-pf = PyForward()
-pf.disable_all(internal_ip=pf.get_local_ip())
+Mapping.disable_all(internal_ip=Mapping.get_local_ip())
 ```
 
 ### Refresh a mapping
 
 ```
-from pyforward import PyForward
-import time
+from datetime import timedelta
+from time import sleep
 
-pf = PyForward()
-pf.enable(duration=5) # mapping expires after 5 seconds
-time.sleep(10) # for demonstration, to show that the mapping will expire
-pf.refresh()
+from pyforward import Mapping
+
+m = Mapping(duration=timedelta(seconds=5)) # mapping expires after 5 seconds
+m.enable()
+sleep(10) # the mapping will expire after this time
+m.refresh()
 ```
 
 ## License
