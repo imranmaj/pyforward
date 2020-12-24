@@ -381,7 +381,6 @@ class Mapping:
         """
 
         if parser.find("errorDescription") is not None:
-            print(parser)
             error = parser.find("errorDescription").contents[0]
             raise MappingError(error)
 
